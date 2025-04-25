@@ -27,7 +27,7 @@ function Dashboard() {
 
   const fetchModels = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/models');
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/models`);
       setModels(response.data);
     } catch (error) {
       console.error('Error fetching models:', error);
@@ -56,7 +56,7 @@ function Dashboard() {
     formDataToSend.append('model', formData.model);
 
     try {
-      await axios.post('http://localhost:5000/api/models', formDataToSend, {
+      await axios.post(`${process.env.REACT_APP_API_URL}/api/models`, formDataToSend, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },

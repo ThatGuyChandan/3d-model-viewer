@@ -6,8 +6,8 @@ import { useParams } from 'react-router-dom';
 import axios from 'axios';
 
 function Model({ url }) {
-  const s3Url = url.startsWith('http://localhost:5000/') 
-    ? url.replace('http://localhost:5000/', '') 
+  const s3Url = url.startsWith(process.env.REACT_APP_API_URL) 
+    ? url.replace(process.env.REACT_APP_API_URL, '') 
     : url;
 
   const { scene } = useGLTF(s3Url);
@@ -23,7 +23,7 @@ function ModelViewer() {
   React.useEffect(() => {
     const fetchModel = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/api/models/${id}`);
+        const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/models/${id}`);
         setModelData(response.data);
         setLoading(false);
       } catch (err) {
