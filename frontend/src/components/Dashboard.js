@@ -8,6 +8,8 @@ import {
   TextField,
   Typography,
   Paper,
+  CircularProgress,
+  Box,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -19,6 +21,7 @@ function Dashboard() {
     description: '',
     model: null,
   });
+  const [uploading, setUploading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -50,6 +53,7 @@ function Dashboard() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setUploading(true);
     const formDataToSend = new FormData();
     formDataToSend.append('name', formData.name);
     formDataToSend.append('description', formData.description);
@@ -65,6 +69,8 @@ function Dashboard() {
       fetchModels();
     } catch (error) {
       console.error('Error uploading model:', error);
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -84,6 +90,7 @@ function Dashboard() {
                 value={formData.name}
                 onChange={handleInputChange}
                 required
+                disabled={uploading}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -94,6 +101,7 @@ function Dashboard() {
                 value={formData.description}
                 onChange={handleInputChange}
                 required
+                disabled={uploading}
               />
             </Grid>
             <Grid item xs={12}>
@@ -102,17 +110,33 @@ function Dashboard() {
                 accept=".glb"
                 onChange={handleFileChange}
                 required
+                disabled={uploading}
               />
             </Grid>
             <Grid item xs={12}>
-              <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                disabled={!formData.model}
-              >
-                Upload Model
-              </Button>
+              <Box sx={{ position: 'relative' }}>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  color="primary"
+                  disabled={!formData.model || uploading}
+                  sx={{ minWidth: 120 }}
+                >
+                  {uploading ? 'Uploading...' : 'Upload Model'}
+                </Button>
+                {uploading && (
+                  <CircularProgress
+                    size={24}
+                    sx={{
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      marginTop: '-12px',
+                      marginLeft: '-12px',
+                    }}
+                  />
+                )}
+              </Box>
             </Grid>
           </Grid>
         </form>
