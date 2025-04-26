@@ -60,6 +60,7 @@ function ModelViewer() {
   const [error, setError] = useState(null);
   const [selectedBackground, setSelectedBackground] = useState('night');
   const canvasRef = useRef();
+  const controlsRef = useRef();
 
   useEffect(() => {
     const fetchModel = async () => {
@@ -75,6 +76,29 @@ function ModelViewer() {
 
     fetchModel();
   }, [id]);
+
+  const handleBackgroundChange = (newBackground) => {
+    // Store current camera position and target
+    const controls = controlsRef.current;
+    if (controls) {
+      const position = controls.object.position.clone();
+      const target = controls.target.clone();
+      
+      // Update background
+      setSelectedBackground(newBackground);
+      
+      // Restore camera position and target after a short delay
+      setTimeout(() => {
+        if (controls) {
+          controls.object.position.copy(position);
+          controls.target.copy(target);
+          controls.update();
+        }
+      }, 50);
+    } else {
+      setSelectedBackground(newBackground);
+    }
+  };
 
   if (loading) {
     return (
@@ -111,7 +135,7 @@ function ModelViewer() {
           <InputLabel sx={{ color: 'white' }}>Background</InputLabel>
           <Select
             value={selectedBackground}
-            onChange={(e) => setSelectedBackground(e.target.value)}
+            onChange={(e) => handleBackgroundChange(e.target.value)}
             label="Background"
             sx={{
               color: 'white',
@@ -146,7 +170,7 @@ function ModelViewer() {
           >
             <Model url={model.filePath} />
           </Stage>
-          <OrbitControls />
+          <OrbitControls ref={controlsRef} />
         </Canvas>
       </Box>
     </Box>
