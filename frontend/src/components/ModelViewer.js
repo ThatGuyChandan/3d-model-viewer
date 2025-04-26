@@ -43,7 +43,6 @@ const backgrounds = {
     name: "Warehouse",
     component: <Environment preset="warehouse" background />,
   },
-
   studio: {
     name: "Studio",
     component: <Environment preset="studio" background />,
@@ -69,7 +68,7 @@ function ModelViewer() {
   const [model, setModel] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedBackground, setSelectedBackground] = useState("city");
+  const [selectedBackground, setSelectedBackground] = useState("park"); // Set "park" as the default
   const controlsRef = useRef();
 
   useEffect(() => {
