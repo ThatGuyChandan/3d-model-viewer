@@ -10,9 +10,21 @@ import {
   Paper,
   CircularProgress,
   Box,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+  Tooltip,
+  Fade,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import DeleteIcon from '@mui/icons-material/Delete';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import DescriptionIcon from '@mui/icons-material/Description';
+import '../styles/global.css';
 
 function Dashboard() {
   const [models, setModels] = useState([]);
@@ -22,6 +34,9 @@ function Dashboard() {
     model: null,
   });
   const [uploading, setUploading] = useState(false);
+  const [deletingModelId, setDeletingModelId] = useState(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [modelToDelete, setModelToDelete] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -74,11 +89,37 @@ function Dashboard() {
     }
   };
 
+  const handleDeleteClick = (model) => {
+    setModelToDelete(model);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!modelToDelete) return;
+    
+    setDeletingModelId(modelToDelete._id);
+    try {
+      await axios.delete(`${process.env.REACT_APP_API_URL}/api/models/${modelToDelete._id}`);
+      fetchModels();
+    } catch (error) {
+      console.error('Error deleting model:', error);
+    } finally {
+      setDeletingModelId(null);
+      setDeleteDialogOpen(false);
+      setModelToDelete(null);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setModelToDelete(null);
+  };
+
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Paper sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h5" gutterBottom>
-          Upload New 3D Model
+    <Container maxWidth="lg" className="dashboard-container">
+      <Paper className="upload-paper">
+        <Typography variant="h5" gutterBottom className="section-title">
+          <CloudUploadIcon /> Upload New 3D Model
         </Typography>
         <form onSubmit={handleSubmit}>
           <Grid container spacing={3}>
@@ -91,6 +132,7 @@ function Dashboard() {
                 onChange={handleInputChange}
                 required
                 disabled={uploading}
+                className="text-field"
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -102,16 +144,35 @@ function Dashboard() {
                 onChange={handleInputChange}
                 required
                 disabled={uploading}
+                className="text-field"
               />
             </Grid>
             <Grid item xs={12}>
-              <input
-                type="file"
-                accept=".glb"
-                onChange={handleFileChange}
-                required
-                disabled={uploading}
-              />
+              <Box className="file-input">
+                <input
+                  type="file"
+                  accept=".glb"
+                  onChange={handleFileChange}
+                  required
+                  disabled={uploading}
+                  style={{ display: 'none' }}
+                  id="model-upload"
+                />
+                <label htmlFor="model-upload">
+                  <Button
+                    variant="outlined"
+                    component="span"
+                    disabled={uploading}
+                    startIcon={<DescriptionIcon />}
+                    className="file-button"
+                  >
+                    Choose File
+                  </Button>
+                </label>
+                <Typography variant="body2" className="file-name">
+                  {formData.model ? formData.model.name : 'No file chosen'}
+                </Typography>
+              </Box>
             </Grid>
             <Grid item xs={12}>
               <Box sx={{ position: 'relative' }}>
@@ -120,20 +181,14 @@ function Dashboard() {
                   variant="contained"
                   color="primary"
                   disabled={!formData.model || uploading}
-                  sx={{ minWidth: 120 }}
+                  className="upload-button"
                 >
                   {uploading ? 'Uploading...' : 'Upload Model'}
                 </Button>
                 {uploading && (
                   <CircularProgress
                     size={24}
-                    sx={{
-                      position: 'absolute',
-                      top: '50%',
-                      left: '50%',
-                      marginTop: '-12px',
-                      marginLeft: '-12px',
-                    }}
+                    className="upload-progress"
                   />
                 )}
               </Box>
@@ -142,31 +197,84 @@ function Dashboard() {
         </form>
       </Paper>
 
-      <Typography variant="h5" gutterBottom>
+      <Typography variant="h5" gutterBottom className="section-title">
         Your 3D Models
       </Typography>
       <Grid container spacing={3}>
         {models.map((model) => (
           <Grid item xs={12} sm={6} md={4} key={model._id}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6">{model.name}</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {model.description}
-                </Typography>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={() => navigate(`/view/${model._id}`)}
-                  sx={{ mt: 2 }}
-                >
-                  View Model
-                </Button>
-              </CardContent>
-            </Card>
+            <Fade in={true} timeout={500}>
+              <Card className="model-card">
+                <CardContent className="card-content">
+                  <Typography className="model-name" variant="h6">
+                    {model.name}
+                  </Typography>
+                  <Typography className="model-description" variant="body2">
+                    {model.description}
+                  </Typography>
+                  <Box className="action-buttons">
+                    <Tooltip title="View Model">
+                      <IconButton
+                        color="primary"
+                        onClick={() => navigate(`/view/${model._id}`)}
+                        disabled={deletingModelId !== null}
+                        className="view-button"
+                      >
+                        <VisibilityIcon />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Delete Model">
+                      <IconButton
+                        color="error"
+                        onClick={() => handleDeleteClick(model)}
+                        disabled={deletingModelId !== null}
+                        className="delete-button"
+                      >
+                        {deletingModelId === model._id ? (
+                          <CircularProgress size={24} sx={{ color: 'error.main' }} />
+                        ) : (
+                          <DeleteIcon />
+                        )}
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Fade>
           </Grid>
         ))}
       </Grid>
+
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleDeleteCancel}
+        aria-labelledby="delete-dialog-title"
+        PaperProps={{
+          className: "delete-dialog"
+        }}
+      >
+        <DialogTitle id="delete-dialog-title">
+          Delete Model
+        </DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete "{modelToDelete?.name}"? This action cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteCancel} className="cancel-button">
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleDeleteConfirm} 
+            color="error" 
+            variant="contained"
+            disabled={deletingModelId !== null}
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 }

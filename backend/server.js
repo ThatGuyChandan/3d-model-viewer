@@ -2,7 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const multer = require('multer');
-const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 const path = require('path');
 require('dotenv').config();
 
@@ -112,6 +112,34 @@ app.get('/api/models/:id', async (req, res) => {
     if (!model) return res.status(404).json({ error: 'Model not found' });
     res.json(model);
   } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/models/:id', async (req, res) => {
+  try {
+    const model = await Model.findById(req.params.id);
+    if (!model) {
+      return res.status(404).json({ error: 'Model not found' });
+    }
+
+    // Extract the file key from the S3 URL
+    const fileKey = model.filePath.split('.com/')[1];
+    
+    // Delete from S3
+    const deleteParams = {
+      Bucket: process.env.AWS_BUCKET_NAME,
+      Key: fileKey
+    };
+    
+    await s3Client.send(new DeleteObjectCommand(deleteParams));
+    
+    // Delete from database
+    await Model.findByIdAndDelete(req.params.id);
+    
+    res.json({ message: 'Model deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting model:', err);
     res.status(500).json({ error: err.message });
   }
 });
