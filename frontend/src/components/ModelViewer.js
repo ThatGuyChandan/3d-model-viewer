@@ -3,12 +3,16 @@ import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { Box, Typography, CircularProgress, Paper, IconButton, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, useGLTF, Environment, Stage, Sky } from '@react-three/drei';
+import { OrbitControls, useGLTF, Environment, Sky } from '@react-three/drei';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate } from 'react-router-dom';
 import '../styles/global.css';
 
 const backgrounds = {
+  city: {
+    name: 'City',
+    component: <Environment preset="city" background />,
+  },
   night: {
     name: 'Space',
     component: <Environment preset="night" background />,
@@ -29,10 +33,7 @@ const backgrounds = {
     name: 'Warehouse',
     component: <Environment preset="warehouse" background />,
   },
-  city: {
-    name: 'City',
-    component: <Environment preset="city" background />,
-  },
+  
   studio: {
     name: 'Studio',
     component: <Environment preset="studio" background />,
@@ -49,7 +50,7 @@ const backgrounds = {
 
 function Model({ url }) {
   const { scene } = useGLTF(url);
-  return <primitive object={scene} scale={0.5} />;
+  return <primitive object={scene} scale={1.1} />;
 }
 
 function ModelViewer() {
@@ -59,7 +60,6 @@ function ModelViewer() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedBackground, setSelectedBackground] = useState('night');
-  const canvasRef = useRef();
   const controlsRef = useRef();
 
   useEffect(() => {
@@ -78,26 +78,7 @@ function ModelViewer() {
   }, [id]);
 
   const handleBackgroundChange = (newBackground) => {
-    // Store current camera position and target
-    const controls = controlsRef.current;
-    if (controls) {
-      const position = controls.object.position.clone();
-      const target = controls.target.clone();
-      
-      // Update background
-      setSelectedBackground(newBackground);
-      
-      // Restore camera position and target after a short delay
-      setTimeout(() => {
-        if (controls) {
-          controls.object.position.copy(position);
-          controls.target.copy(target);
-          controls.update();
-        }
-      }, 50);
-    } else {
-      setSelectedBackground(newBackground);
-    }
+    setSelectedBackground(newBackground);
   };
 
   if (loading) {
@@ -160,16 +141,19 @@ function ModelViewer() {
           </Select>
         </FormControl>
       </Paper>
-      <Box className="canvas-container" ref={canvasRef}>
+
+      <Box className="canvas-container">
         <Canvas camera={{ position: [0, 0, 5], fov: 50 }}>
           {backgrounds[selectedBackground].component}
-          <Stage 
-            intensity={1.5} 
-            environment={selectedBackground === 'sky' ? 'sunset' : selectedBackground}
-            preset={selectedBackground === 'sky' ? 'rembrandt' : 'soft'}
-          >
-            <Model url={model.filePath} />
-          </Stage>
+
+          {/* Manual Lighting */}
+          <ambientLight intensity={0.8} />
+          <directionalLight position={[5, 5, 5]} intensity={1} />
+
+          {/* Model */}
+          <Model url={model.filePath} />
+
+          {/* Controls */}
           <OrbitControls ref={controlsRef} />
         </Canvas>
       </Box>
